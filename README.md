@@ -1,7 +1,7 @@
 # electron-hiprint
-electron开发的打印软件
+electron开发的打印软件，电脑客户端软件（需要安装在电脑上的服务软件）
 
-由[vue-plugin-hiprint](https://gitee.com/ccsimple/vue-plugin-hiprint)魔改而来，改动如下：
+由[electron-hiprint](https://gitee.com/CcSimple/electron-hiprint)魔改而来，改动如下：
 
 1、由websocket改为http api调用打印，更方便调用
 
