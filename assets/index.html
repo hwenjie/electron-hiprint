@@ -1,0 +1,113 @@
+<!--
+ * @Date: 2022-09-13 11:11:52
+ * @LastEditors: admin@54xavier.cn
+ * @LastEditTime: 2024-04-05 13:08:31
+ * @FilePath: \electron-hiprint\assets\index.html
+-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <link
+      rel="stylesheet"
+      href="./element-ui/index.css"
+    />
+    <script src="./js/vue.min.js"></script>
+    <script src="./element-ui/index.js"></script>
+  </head>
+
+  <body>
+    <div id="app" class="box">
+      <div class="background">
+        <div class="bg-primary" :class="{active: !transitActiveFlag}"></div>
+        <div
+          class="bg-success"
+          :class="{active: transitActiveFlag}"
+        ></div>
+        <div class="bg-warning" :class="{active: printing}"></div>
+      </div>
+      <div class="container">
+        <div class="info">
+          <div class="title">
+            打印服务已启动<i class="el-icon-setting seticon" @click="openSetting"></i>
+          </div>
+          <div class="message row">
+            服务地址：<span @click="handleCopy">{{ ipAddress }}</span>
+          </div>
+          <div class="message row">
+            MAC地址：<span @click="handleCopy">{{ macAddress }}</span>
+          </div>
+        </div>
+        <div class="status">
+          <div class="message">
+            中转状态: <span>{{ transitActiveFlag ? '已' : '未' }}连接</span>
+          </div>
+          <div class="message">
+            打印状态：<span>{{ printing ? "文档打印中" : "空闲" }}</span>
+          </div>
+          <div class="message row">设备编号：<span @click="handleCopy">{{ deviceId }}</span></div>
+          <!-- <div class="message">
+            插件版本：{{ pluginVersion }}
+          </div>
+          <div class="message">
+            客户端版本：{{ process.env.npm_package_version }}
+          </div> -->
+        </div>
+      </div>
+    </div>
+    <script type="text/javascript">
+      const { ipcRenderer, clipboard } = require("electron");
+      const Store = require("electron-store");
+      const store = new Store();
+
+      document.title = "打印机服务";
+
+      let ipc = ipcRenderer;
+      new Vue({
+        el: "#app",
+        data: () => {
+          return {
+            macAddress: "",
+            ipAddress: "",
+            deviceId: "",
+            transitActiveFlag: false,
+            printing: false,
+            version: "1.0.10",
+            pluginVersion: store.get("pluginVersion") || "未指定",
+          };
+        },
+        created() {
+          ipc.send("getMachineId");
+          ipc.on("machineId", (event, arg) => {
+            this.deviceId = arg;
+          });
+          ipc.send("getAddress");
+          ipc.on("address", (event, arg) => {
+            this.ipAddress = `http://${arg.ip}:${arg.port || 17521}`;
+            this.macAddress = arg.mac;
+          });
+          ipc.on("printTask", (event, arg) => {
+            this.printing = arg;
+          });
+          ipc.on("clientConnection", this.transitActive);
+        },
+        methods: {
+          openSetting() {
+            ipc.send("openSetting");
+          },
+          handleCopy(event) {
+            clipboard.writeText(event.target.innerText);
+            ipc.send("notification", {
+              title: "复制成功",
+              body: "文本已成功复制到剪贴板中！",
+            });
+          },
+          transitActive(event, arg) {
+            this.transitActiveFlag = arg;
+          },
+        },
+      });
+    </script>
+  </body>
+</html>
